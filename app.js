@@ -1,9 +1,10 @@
 const express = require("express");
-const path = require('path')
+const path = require("path");
 const feedRouter = require("./routes/feed");
 const app = express();
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
+require('dotenv').config()
 
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -15,11 +16,16 @@ app.use((req, res, next) => {
   next();
 });
 app.use(bodyParser.json());
-app.use('/images', express.static(path.join(__dirname, 'images')))
+app.use("/images", express.static(path.join(__dirname, "images")));
 app.use("/feed", feedRouter);
+app.use((error, req, res, next) => {
+    console.log(error)
+    const status = error.statusCode || 500;
+    const message = error.message;
+    res.status(status).json({message: message})
+});
 mongoose
-  .connect(
-    "mongodb+srv://AlexMel:Strechii1989@newsdb-x7jaj.mongodb.net/messages?retryWrites=true&w=majority",
+  .connect(process.env.MONGO_DB_URI
   )
   .then((result) => {
     app.listen(8080);
