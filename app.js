@@ -4,7 +4,28 @@ const feedRouter = require("./routes/feed");
 const app = express();
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
-require('dotenv').config()
+require("dotenv").config();
+const multer = require("multer");
+
+const fileStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "images");
+  },
+  filename: (req, file, cb) => {
+    cb(null, new Date().toISOString() + "-" + file.originalname);
+  },
+});
+const fileFilter = (req, file, cb) => {
+  if (
+    file.mimetype === "image/png" ||
+    file.mimetype === "image/jpg" ||
+    file.mimetype === "image/jpeg"
+  ) {
+    cb(null, true);
+  } else {
+    cb(null, false);
+  }
+};
 
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -16,17 +37,19 @@ app.use((req, res, next) => {
   next();
 });
 app.use(bodyParser.json());
+app.use(
+  multer({ storage: fileStorage, fileFilter: fileFilter }).single("image")
+);
 app.use("/images", express.static(path.join(__dirname, "images")));
 app.use("/feed", feedRouter);
 app.use((error, req, res, next) => {
-    console.log(error)
-    const status = error.statusCode || 500;
-    const message = error.message;
-    res.status(status).json({message: message})
+  console.log(error);
+  const status = error.statusCode || 500;
+  const message = error.message;
+  res.status(status).json({ message: message });
 });
 mongoose
-  .connect(process.env.MONGO_DB_URI
-  )
+  .connect(process.env.MONGO_DB_URI)
   .then((result) => {
     app.listen(8080);
   })
